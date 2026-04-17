@@ -1,0 +1,11 @@
+# Audio files (too large for repo, keep local only)
+*.m4a
+*.mp3
+*.wav
+*.mp4
+*.aac
+*.ogg
+
+# OS files
+.DS_Store
+Thumbs.db

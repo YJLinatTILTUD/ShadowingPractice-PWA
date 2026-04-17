@@ -1,8 +1,9 @@
 {
   "name": "ShadowSpeak",
   "short_name": "ShadowSpeak",
-  "description": "English shadowing practice app — listen, select, shadow",
-  "start_url": "/",
+  "description": "English shadowing practice app",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#111110",
   "theme_color": "#01696f",
