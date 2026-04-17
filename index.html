@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#01696f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ShadowSpeak">
+<title>ShadowSpeak</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ===== TOKENS ===== */
+:root {
+  --c-bg:#f7f6f2; --c-surf:#ffffff; --c-surf2:#f3f2ee; --c-border:#ddd9d4;
+  --c-divider:#e8e5e0; --c-txt:#28251d; --c-muted:#7a7974; --c-faint:#bab9b4;
+  --c-inv:#f9f8f4;
+  --c-pri:#01696f; --c-pri-h:#0c4e54; --c-pri-bg:#d4eaeb;
+  --c-gold:#c48f00; --c-gold-bg:#f0e3b8;
+  --c-red:#a12c7b; --c-red-bg:#f0daea;
+  --c-green:#3a7520; --c-green-bg:#d6e8cc;
+  --c-warn:#8a3d14; --c-warn-bg:#f0ddd0;
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:18px; --r-full:999px;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.13);
+  --font:'Inter',sans-serif;
+  --font-d:'Instrument Serif',Georgia,serif;
+  --tr:200ms cubic-bezier(.16,1,.3,1);
+}
+[data-theme=dark]{
+  --c-bg:#111110; --c-surf:#1c1b19; --c-surf2:#222120; --c-border:#323130;
+  --c-divider:#282726; --c-txt:#d0cfc9; --c-muted:#8a8986; --c-faint:#4a4946;
+  --c-inv:#1c1b19;
+  --c-pri:#4fa8b0; --c-pri-h:#3d8f97; --c-pri-bg:#1a3538;
+  --c-gold:#e8b034; --c-gold-bg:#30250d;
+  --c-red:#d163a7; --c-red-bg:#301528;
+  --c-green:#6daa45; --c-green-bg:#1e2e14;
+  --c-warn:#e07a3a; --c-warn-bg:#30200f;
+  --shadow:0 2px 12px rgba(0,0,0,.3);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{-webkit-font-smoothing:antialiased;height:100%;}
+body{font-family:var(--font);background:var(--c-bg);color:var(--c-txt);min-height:100%;overflow-x:hidden;}
+button,input{cursor:pointer;background:none;border:none;font:inherit;color:inherit;outline:none;}
+svg{display:block;flex-shrink:0;}
+audio{display:none;}
+
+/* ===== APP SHELL ===== */
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;}
+
+/* ===== TOP BAR ===== */
+.topbar{
+  height:56px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;background:var(--c-surf);border-bottom:1px solid var(--c-divider);
+  position:sticky;top:0;z-index:100;
+}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar-logo{display:flex;align-items:center;gap:8px;}
+.topbar-logo .logo-icon{width:30px;height:30px;border-radius:8px;background:var(--c-pri);display:flex;align-items:center;justify-content:center;}
+.topbar-logo .logo-text{font-family:var(--font-d);font-style:italic;font-size:1.1rem;color:var(--c-txt);}
+.topbar-logo .logo-text span{color:var(--c-pri);}
+.back-btn{display:flex;align-items:center;gap:4px;color:var(--c-pri);font-size:.875rem;font-weight:500;padding:6px 4px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.icon-btn{width:36px;height:36px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;color:var(--c-muted);transition:background var(--tr);}
+.icon-btn:hover{background:var(--c-surf2);}
+
+/* ===== SCREENS ===== */
+.screen{flex:1;display:none;flex-direction:column;padding:16px;gap:12px;overflow-y:auto;padding-bottom:80px;}
+.screen.active{display:flex;}
+
+/* ===== HOME ===== */
+.home-hero{text-align:center;padding:24px 0 8px;}
+.home-hero h1{font-family:var(--font-d);font-style:italic;font-size:1.6rem;color:var(--c-txt);}
+.home-hero p{font-size:.875rem;color:var(--c-muted);margin-top:4px;}
+
+.step-card{
+  background:var(--c-surf);border:1px solid var(--c-border);border-radius:var(--r-xl);
+  padding:16px;display:flex;align-items:center;gap:14px;
+  box-shadow:var(--shadow);transition:box-shadow var(--tr),border-color var(--tr);
+  cursor:pointer;
+}
+.step-card:hover{box-shadow:var(--shadow-lg);border-color:var(--c-pri);}
+.step-card.disabled{opacity:.45;pointer-events:none;}
+.step-icon{width:46px;height:46px;border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-card-body{flex:1;}
+.step-card-body h3{font-size:.95rem;font-weight:600;color:var(--c-txt);}
+.step-card-body p{font-size:.8rem;color:var(--c-muted);margin-top:2px;}
+.status-pill{display:inline-flex;align-items:center;margin-top:6px;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 10px;border-radius:var(--r-full);}
+.pill-done{background:var(--c-green-bg);color:var(--c-green);}
+.pill-active{background:var(--c-gold-bg);color:var(--c-gold);}
+.pill-locked{background:var(--c-surf2);color:var(--c-faint);}
+.pill-net{background:var(--c-warn-bg);color:var(--c-warn);}
+
+.streak-bar{background:var(--c-surf);border:1px solid var(--c-border);border-radius:var(--r-lg);padding:12px 14px;display:flex;align-items:center;gap:12px;}
+.streak-bar p:first-child{font-size:.8rem;font-weight:700;color:var(--c-gold);}
+.streak-bar p:last-child{font-size:.75rem;color:var(--c-muted);}
+
+/* ===== STEP HEADER ===== */
+.step-header{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.step-badge{font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:var(--r-full);}
+.badge-1{background:var(--c-gold-bg);color:var(--c-gold);}
+.badge-2{background:var(--c-pri-bg);color:var(--c-pri);}
+.badge-3{background:var(--c-warn-bg);color:var(--c-warn);}
+.step-title{font-family:var(--font-d);font-style:italic;font-size:1.2rem;color:var(--c-txt);}
+
+/* ===== CARDS ===== */
+.card{background:var(--c-surf);border:1px solid var(--c-border);border-radius:var(--r-lg);padding:14px;}
+.card.highlight{border-color:var(--c-pri);background:var(--c-pri-bg);}
+.card.gold{border-color:var(--c-gold);background:var(--c-gold-bg);}
+.card.red{border-color:var(--c-red);background:var(--c-red-bg);}
+.card.warn{border-color:var(--c-warn);background:var(--c-warn-bg);}
+
+/* ===== UPLOAD ZONE ===== */
+.upload-zone{
+  border:1.5px dashed var(--c-border);border-radius:var(--r-lg);
+  padding:32px 16px;text-align:center;background:var(--c-surf);
+  transition:border-color var(--tr),background var(--tr);cursor:pointer;
+}
+.upload-zone.active-file{border-color:var(--c-pri);border-style:solid;background:var(--c-pri-bg);}
+.upload-zone .uz-icon{margin:0 auto 10px;color:var(--c-faint);}
+.upload-zone.active-file .uz-icon{color:var(--c-pri);}
+.upload-zone .uz-main{font-size:.9rem;font-weight:600;color:var(--c-muted);}
+.upload-zone.active-file .uz-main{color:var(--c-pri);}
+.upload-zone .uz-sub{font-size:.78rem;color:var(--c-faint);margin-top:4px;}
+#file-input{display:none;}
+
+/* ===== WAVEFORM ===== */
+.waveform{height:48px;background:var(--c-surf2);border-radius:var(--r-md);display:flex;align-items:center;gap:2px;padding:0 12px;overflow:hidden;}
+.waveform .wb{width:2px;border-radius:1px;background:var(--c-pri);opacity:.45;transition:height .1s;}
+.waveform .wb.active{opacity:1;}
+
+/* ===== PROGRESS BAR ===== */
+.progress-wrap{display:flex;flex-direction:column;gap:4px;}
+.progress-track{height:4px;background:var(--c-surf2);border-radius:var(--r-full);overflow:hidden;}
+.progress-fill{height:100%;background:var(--c-pri);border-radius:var(--r-full);transition:width .3s;}
+.progress-times{display:flex;justify-content:space-between;}
+.progress-times span{font-size:.72rem;color:var(--c-muted);}
+
+/* ===== SENTENCE NAV ===== */
+.sentence-progress{display:flex;gap:3px;margin-bottom:4px;}
+.sp-seg{flex:1;height:3px;border-radius:2px;background:var(--c-surf2);}
+.sp-seg.done{background:var(--c-pri);}
+.sp-seg.cur{background:var(--c-gold);}
+.sp-meta{display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:8px;}
+.sp-meta .sp-idx{color:var(--c-faint);}
+.sp-meta .sp-sel{color:var(--c-pri);font-weight:600;}
+
+.sent-nav{display:flex;align-items:stretch;gap:8px;}
+.nav-arr{
+  width:36px;flex-shrink:0;border:1.5px solid var(--c-border);border-radius:var(--r-md);
+  display:flex;align-items:center;justify-content:center;color:var(--c-muted);
+  transition:background var(--tr),border-color var(--tr),color var(--tr);
+}
+.nav-arr:hover:not(:disabled){background:var(--c-surf2);border-color:var(--c-pri);color:var(--c-txt);}
+.nav-arr:disabled{opacity:.3;pointer-events:none;}
+.sent-card{
+  flex:1;background:var(--c-surf);border:1px solid var(--c-border);
+  border-radius:var(--r-lg);padding:12px 14px;min-height:72px;
+}
+.sent-card.selected{border-color:var(--c-pri);background:var(--c-pri-bg);}
+.sent-label{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c-faint);margin-bottom:4px;}
+.sent-text{font-size:.85rem;color:var(--c-txt);line-height:1.55;}
+.sent-badge{float:right;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:var(--r-full);background:var(--c-green-bg);color:var(--c-green);margin-top:2px;}
+
+/* ===== BUTTONS ===== */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  border-radius:var(--r-full);padding:12px 20px;font-size:.9rem;font-weight:600;
+  width:100%;transition:filter var(--tr),transform var(--tr);
+}
+.btn:hover{filter:brightness(1.05);}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--c-pri);color:var(--c-inv);}
+.btn-ghost{background:transparent;border:1.5px solid var(--c-pri);color:var(--c-pri);}
+.btn-ghost:hover{background:var(--c-pri-bg);}
+.btn-record{background:var(--c-red);color:#fff;}
+.btn-success{background:var(--c-green);color:#fff;}
+.btn-download{background:var(--c-surf);border:1.5px solid var(--c-border);color:var(--c-muted);}
+.btn-download:hover{border-color:var(--c-pri);color:var(--c-pri);}
+.btn-sm{padding:8px 16px;font-size:.8rem;}
+.btn:disabled{opacity:.35;pointer-events:none;}
+.btn-row{display:flex;gap:8px;}
+.btn-row .btn{flex:1;}
+
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(161,44,123,.35);}70%{box-shadow:0 0 0 10px rgba(161,44,123,0);}100%{box-shadow:0 0 0 0 rgba(161,44,123,0);}}
+.recording{animation:pulse 1.5s ease-out infinite;}
+
+/* ===== SEQ INDICATOR ===== */
+.seq-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--r-md);}
+.seq-num{width:22px;height:22px;border-radius:50%;font-size:.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.seq-bar p{font-size:.82rem;font-weight:500;}
+.seq-1{background:var(--c-pri-bg);}
+.seq-1 .seq-num{background:var(--c-pri);color:#fff;}
+.seq-1 p{color:var(--c-pri);}
+.seq-2{background:var(--c-red-bg);}
+.seq-2 .seq-num{background:var(--c-red);color:#fff;}
+.seq-2 p{color:var(--c-red);}
+.seq-3{background:var(--c-gold-bg);}
+.seq-3 .seq-num{background:var(--c-gold);color:#fff;}
+.seq-3 p{color:var(--c-gold);}
+
+/* ===== DUAL WAVE ===== */
+.dual-wave{background:var(--c-surf);border:1px solid var(--c-border);border-radius:var(--r-lg);padding:12px;}
+.dw-label{font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c-faint);margin-bottom:8px;}
+.dw-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.dw-row:last-child{margin-bottom:0;}
+.dw-track-label{font-size:.65rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;width:30px;flex-shrink:0;}
+.dw-track-label.nat{color:var(--c-pri);}
+.dw-track-label.me{color:var(--c-gold);}
+.mini-wave{flex:1;height:22px;border-radius:var(--r-sm);display:flex;align-items:center;gap:1.5px;padding:0 4px;overflow:hidden;}
+.mini-wave .mw-b{width:2px;border-radius:1px;}
+.mini-wave.nat .mw-b{background:var(--c-pri);opacity:.6;}
+.mini-wave.me .mw-b{background:var(--c-gold);opacity:.6;}
+.dw-play{padding:3px 10px;border-radius:var(--r-sm);font-size:.68rem;font-weight:700;border:none;cursor:pointer;}
+.dw-play.nat-play{background:var(--c-pri-bg);color:var(--c-pri);}
+.dw-play.me-play{background:var(--c-gold-bg);color:var(--c-gold);}
+
+/* ===== INFO ROW ===== */
+.info-row{display:flex;align-items:center;justify-content:space-between;background:var(--c-surf2);border-radius:var(--r-md);padding:8px 12px;}
+.info-row span{font-size:.82rem;color:var(--c-muted);}
+.info-row strong{font-size:.82rem;color:var(--c-pri);font-weight:700;}
+
+/* ===== NOTICE ===== */
+.notice{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--r-md);font-size:.8rem;}
+.notice.warn{background:var(--c-warn-bg);color:var(--c-warn);}
+.notice.info{background:var(--c-pri-bg);color:var(--c-pri);}
+
+/* ===== STEP 3 PLACEHOLDER ===== */
+.step3-placeholder{
+  background:var(--c-surf);border:1.5px dashed var(--c-border);
+  border-radius:var(--r-xl);padding:32px 20px;text-align:center;
+}
+.step3-placeholder .ph-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  padding:3px 12px;border-radius:var(--r-full);
+  background:var(--c-warn-bg);color:var(--c-warn);margin-bottom:16px;
+}
+.step3-placeholder h3{font-size:1rem;font-weight:600;margin-bottom:8px;}
+.step3-placeholder p{font-size:.82rem;color:var(--c-muted);line-height:1.65;}
+.step3-placeholder .ph-features{
+  margin-top:16px;text-align:left;
+  background:var(--c-surf2);border-radius:var(--r-lg);padding:14px;
+}
+.step3-placeholder .ph-features li{
+  font-size:.82rem;color:var(--c-muted);line-height:1.7;
+  padding-left:16px;position:relative;list-style:none;
+}
+.step3-placeholder .ph-features li::before{content:'→';position:absolute;left:0;color:var(--c-faint);}
+
+/* ===== TOAST ===== */
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--c-txt);color:var(--c-bg);padding:10px 20px;border-radius:var(--r-full);
+  font-size:.82rem;font-weight:500;opacity:0;transition:opacity .2s,transform .2s;
+  white-space:nowrap;pointer-events:none;z-index:200;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  height:62px;background:var(--c-surf);border-top:1px solid var(--c-divider);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:0 8px;z-index:100;
+}
+.bnav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 4px;border-radius:var(--r-md);
+  font-size:.65rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
+  color:var(--c-faint);transition:color var(--tr),background var(--tr);cursor:pointer;
+}
+.bnav-item.active{color:var(--c-pri);}
+.bnav-item:hover{background:var(--c-surf2);}
+</style>
+</head>
+<body data-theme="dark">
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar" id="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo" id="topbar-logo">
+        <div class="logo-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M6 12C6 8.5 9 6 12 6C15 6 18 8.5 18 12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="12" cy="16" r="2.5" fill="white"/>
+          </svg>
+        </div>
+        <span class="logo-text">Shadow<span>Speak</span></span>
+      </div>
+      <button class="back-btn" id="back-btn" style="display:none" onclick="goHome()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+        返回
+      </button>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="toggleTheme()" title="切換主題">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================== HOME ===================== -->
+  <div class="screen active" id="screen-home">
+    <div class="home-hero">
+      <h1>ShadowSpeak</h1>
+      <p>選擇今天要做哪個步驟</p>
+    </div>
+
+    <div class="step-card" id="card-s1" onclick="gotoStep1()">
+      <div class="step-icon" style="background:var(--c-gold-bg);color:var(--c-gold)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </div>
+      <div class="step-card-body">
+        <h3>Step 1 — 聆聽 &amp; 選句</h3>
+        <p>上傳音檔，選出練習句子</p>
+        <span class="status-pill pill-active" id="s1-pill">待開始</span>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+
+    <div class="step-card" id="card-s2" onclick="gotoStep2()" style="opacity:.5;pointer-events:none">
+      <div class="step-icon" style="background:var(--c-pri-bg);color:var(--c-pri)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="10" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 20v-3M8 20h8"/></svg>
+      </div>
+      <div class="step-card-body">
+        <h3>Step 2 — Shadowing</h3>
+        <p>跟讀、錄音、對比原聲</p>
+        <span class="status-pill pill-locked" id="s2-pill">完成 Step 1 後解鎖</span>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+
+    <div class="step-card disabled" onclick="gotoStep3()">
+      <div class="step-icon" style="background:var(--c-warn-bg);color:var(--c-warn)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      </div>
+      <div class="step-card-body">
+        <h3>Step 3 — Paraphrase</h3>
+        <p>情境改寫 + 30 秒輸出</p>
+        <span class="status-pill pill-net">需網路 · 待開放</span>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+
+    <div class="streak-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-gold)" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <div>
+        <p id="streak-text">0-day streak</p>
+        <p id="streak-sub">今天還沒開始練習</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== STEP 1A — UPLOAD ===================== -->
+  <div class="screen" id="screen-s1a">
+    <div class="step-header">
+      <span class="step-badge badge-1">Step 1</span>
+      <span class="step-title">上傳音檔</span>
+    </div>
+
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <svg class="uz-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p class="uz-main" id="uz-main">點擊選擇音檔</p>
+      <p class="uz-sub" id="uz-sub">支援 MP3 / MP4 / WAV / M4A</p>
+    </div>
+    <input type="file" id="file-input" accept="audio/*,video/mp4">
+    <p style="font-size:.75rem;color:var(--c-faint);text-align:center">— 或從其他 App 分享至此 —</p>
+
+    <button class="btn btn-primary" id="btn-start-play" disabled onclick="gotoStep1B()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      開始播放
+    </button>
+    <p style="font-size:.72rem;color:var(--c-faint);text-align:center" id="upload-hint">上傳音檔後解鎖</p>
+  </div>
+
+  <!-- ===================== STEP 1B — LISTEN ===================== -->
+  <div class="screen" id="screen-s1b">
+    <div class="step-header">
+      <span class="step-badge badge-1">Step 1</span>
+      <span class="step-title">聆聽全文</span>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:var(--r-lg);background:var(--c-pri-bg);display:flex;align-items:center;justify-content:center;color:var(--c-pri);flex-shrink:0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <div>
+          <p style="font-size:.88rem;font-weight:600;color:var(--c-txt)" id="s1b-filename">audio.mp3</p>
+          <p style="font-size:.75rem;color:var(--c-muted)" id="s1b-info">讀取中…</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="waveform" id="s1b-wave"></div>
+
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="s1b-prog" style="width:0%"></div></div>
+      <div class="progress-times"><span id="s1b-cur">0:00</span><span id="s1b-dur">0:00</span></div>
+    </div>
+
+    <div class="notice warn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      請聽完整音檔才可進行選句
+    </div>
+
+    <button class="btn btn-record recording" id="btn-playing" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      播放中… 請勿暫停
+    </button>
+
+    <audio id="main-audio"></audio>
+  </div>
+
+  <!-- ===================== STEP 1C — SELECT ===================== -->
+  <div class="screen" id="screen-s1c">
+    <div class="step-header">
+      <span class="step-badge badge-1">Step 1</span>
+      <span class="step-title">選擇練習句子</span>
+    </div>
+
+    <div id="s1c-seg-wrap" class="sentence-progress"></div>
+    <div class="sp-meta">
+      <span class="sp-idx" id="s1c-idx">Sentence 1 / ?</span>
+      <span class="sp-sel" id="s1c-selcount">0 句已選</span>
+    </div>
+
+    <div class="sent-nav">
+      <button class="nav-arr" id="arr-prev" onclick="sentNav(-1)" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="sent-card" id="sent-card">
+        <p class="sent-label" id="sent-idx-label">Sentence 1</p>
+        <p class="sent-text" id="sent-text">…</p>
+      </div>
+      <button class="nav-arr" id="arr-next" onclick="sentNav(1)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-success btn-sm" id="btn-toggle-sel" onclick="toggleSelect()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        選擇此句
+      </button>
+    </div>
+
+    <div class="info-row">
+      <span>已選句子數</span>
+      <strong id="sel-num-display">0 句</strong>
+    </div>
+
+    <button class="btn btn-primary" id="btn-confirm-sel" disabled onclick="confirmSelection()">
+      確認送出，進入 Step 2
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </div>
+
+  <!-- ===================== STEP 2 ===================== -->
+  <div class="screen" id="screen-s2">
+    <div class="step-header">
+      <span class="step-badge badge-2">Step 2</span>
+      <span class="step-title">Shadowing</span>
+    </div>
+
+    <!-- seq flow -->
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--c-surf);border:1px solid var(--c-border);border-radius:var(--r-lg)">
+      <div style="display:flex;align-items:center;gap:6px;flex:1">
+        <div style="width:20px;height:20px;border-radius:50%;background:var(--c-pri-bg);color:var(--c-pri);font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">①</div>
+        <span style="font-size:.75rem;color:var(--c-muted)">播放</span>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      <div style="display:flex;align-items:center;gap:6px;flex:1">
+        <div style="width:20px;height:20px;border-radius:50%;background:var(--c-red-bg);color:var(--c-red);font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">②</div>
+        <span style="font-size:.75rem;color:var(--c-muted)">錄音</span>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      <div style="display:flex;align-items:center;gap:6px;flex:1">
+        <div style="width:20px;height:20px;border-radius:50%;background:var(--c-gold-bg);color:var(--c-gold);font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">③</div>
+        <span style="font-size:.75rem;color:var(--c-muted)">回聽</span>
+      </div>
+    </div>
+
+    <!-- sentence nav -->
+    <div id="s2-seg-wrap" class="sentence-progress"></div>
+    <div class="sp-meta">
+      <span class="sp-idx" id="s2-idx">Selected 1 / 3</span>
+    </div>
+    <div class="sent-nav">
+      <button class="nav-arr" id="s2-arr-prev" onclick="s2NavSent(-1)" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="sent-card" id="s2-sent-card">
+        <p class="sent-label" id="s2-sent-label">Selected 1</p>
+        <p class="sent-text" id="s2-sent-text">…</p>
+      </div>
+      <button class="nav-arr" id="s2-arr-next" onclick="s2NavSent(1)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    <!-- seq indicator -->
+    <div class="seq-bar seq-1" id="s2-seq-bar">
+      <div class="seq-num">①</div>
+      <p id="s2-seq-txt">先播放原句，才能開始錄音</p>
+    </div>
+
+    <!-- play native -->
+    <button class="btn btn-ghost" id="btn-play-native" onclick="playNative()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <span id="btn-play-native-txt">播放原句音檔</span>
+    </button>
+
+    <!-- record -->
+    <button class="btn btn-record" id="btn-record" disabled onclick="toggleRecord()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="10" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 20v-3M8 20h8"/></svg>
+      <span id="btn-record-txt">開始錄音（播放後解鎖）</span>
+    </button>
+
+    <!-- listen back -->
+    <button class="btn btn-ghost" id="btn-listen-back" disabled onclick="listenBack()" style="border-color:var(--c-gold);color:var(--c-gold)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+      <span id="btn-listen-txt">聆聽我的錄音（錄音後解鎖）</span>
+    </button>
+
+    <!-- dual wave (hidden until recording done) -->
+    <div class="dual-wave" id="s2-dual-wave" style="display:none">
+      <p class="dw-label">雙軌對比</p>
+      <div class="dw-row">
+        <span class="dw-track-label nat">原聲</span>
+        <div class="mini-wave nat" id="dw-nat"></div>
+        <button class="dw-play nat-play" onclick="playNative()">▶ 原聲</button>
+      </div>
+      <div class="dw-row">
+        <span class="dw-track-label me">我</span>
+        <div class="mini-wave me" id="dw-me"></div>
+        <button class="dw-play me-play" onclick="listenBack()">▶ 我</button>
+      </div>
+    </div>
+
+    <!-- download (hidden until recording done) -->
+    <button class="btn btn-download" id="btn-download" style="display:none" onclick="downloadRecording()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      下載此句錄音 (.webm)
+    </button>
+
+    <!-- re-record row (hidden until recording done) -->
+    <div class="btn-row" id="s2-rerow" style="display:none">
+      <button class="btn btn-record btn-sm" onclick="reRecord()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="10" rx="3"/></svg>
+        重新錄音
+      </button>
+      <button class="btn btn-primary btn-sm" id="btn-s2-next" onclick="s2NextSent()">
+        下一句 →
+      </button>
+    </div>
+
+    <audio id="s2-playback"></audio>
+    <audio id="s2-recording-src"></audio>
+  </div>
+
+  <!-- ===================== STEP 3 PLACEHOLDER ===================== -->
+  <div class="screen" id="screen-s3">
+    <div class="step-header">
+      <span class="step-badge badge-3">Step 3</span>
+      <span class="step-title">Paraphrase &amp; Output</span>
+    </div>
+    <div class="step3-placeholder">
+      <div class="ph-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        需要網路 · API 待接入
+      </div>
+      <svg style="margin:0 auto 12px;color:var(--c-warn)" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8l2 2-2 2M11 10h4"/>
+      </svg>
+      <h3>Step 3 功能規劃中</h3>
+      <p>此步驟將透過 LLM API（GPT-4o / Gemini / Claude）完成語言個人化練習。API 選定後更新此頁面。</p>
+      <ul class="ph-features">
+        <li>① Paraphrase — 換一種方式表達相同意思</li>
+        <li>② Add Context — 3 個情境版本（工作 / 學術 / 日常）</li>
+        <li>③ 30s Output Structure — 每天不同說話框架</li>
+        <li>④ 錄音輸出 + 回播（離線完成）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="bnav-item active" id="bnav-home" onclick="goHome()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </div>
+    <div class="bnav-item" id="bnav-s1" onclick="gotoStep1()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      Step 1
+    </div>
+    <div class="bnav-item" id="bnav-s2" onclick="gotoStep2()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="10" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 20v-3M8 20h8"/></svg>
+      Step 2
+    </div>
+    <div class="bnav-item" id="bnav-s3" onclick="gotoStep3()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      Step 3
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ===========================
+// STATE
+// ===========================
+const S = {
+  theme: 'dark',
+  audioFile: null,
+  audioBlobUrl: null,
+  duration: 0,
+  sentences: [],
+  selectedSentences: [],
+  currentSentIdx: 0,
+  streak: parseInt(localStorage.getItem('ss_streak')||'0'),
+  lastDate: localStorage.getItem('ss_lastdate')||'',
+  s1Done: false,
+  // step2
+  s2SentIdx: 0,
+  nativePlayed: false,
+  mediaRecorder: null,
+  recordingChunks: [],
+  recordingBlob: null,
+  recordingBlobUrl: null,
+  isRecording: false,
+};
+
+// ===========================
+// THEME
+// ===========================
+(()=>{
+  const saved = localStorage.getItem('ss_theme')||'dark';
+  S.theme = saved;
+  document.body.setAttribute('data-theme', saved);
+})();
+function toggleTheme(){
+  S.theme = S.theme==='dark'?'light':'dark';
+  document.body.setAttribute('data-theme', S.theme);
+  localStorage.setItem('ss_theme', S.theme);
+}
+
+// ===========================
+// TOAST
+// ===========================
+function showToast(msg, dur=2200){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+// ===========================
+// SCREEN SWITCHING
+// ===========================
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
+  const nm = {home:'bnav-home','s1a':'bnav-s1','s1b':'bnav-s1','s1c':'bnav-s1','s2':'bnav-s2','s3':'bnav-s3'};
+  const nb = document.getElementById(nm[id]);
+  if(nb) nb.classList.add('active');
+  const lb = document.getElementById('topbar-logo');
+  const bb = document.getElementById('back-btn');
+  if(id==='home'){lb.style.display='flex';bb.style.display='none';}
+  else{lb.style.display='none';bb.style.display='flex';}
+  window.scrollTo(0,0);
+}
+function goHome(){ showScreen('home'); }
+function gotoStep1(){ showScreen('s1a'); }
+function gotoStep1B(){
+  if(!S.audioBlobUrl){showToast('請先選擇音檔');return;}
+  showScreen('s1b');
+  startPlayback();
+}
+function gotoStep1C(){ showScreen('s1c'); initStep1C(); }
+function gotoStep2(){
+  if(!S.s1Done){showToast('請先完成 Step 1');return;}
+  showScreen('s2'); initStep2();
+}
+function gotoStep3(){ showScreen('s3'); }
+
+// ===========================
+// STREAK
+// ===========================
+function updateStreak(){
+  const today = new Date().toISOString().slice(0,10);
+  if(S.lastDate !== today){
+    const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    if(S.lastDate===yesterday) S.streak++;
+    else if(S.lastDate!==today) S.streak=1;
+    S.lastDate=today;
+    localStorage.setItem('ss_streak', S.streak);
+    localStorage.setItem('ss_lastdate', today);
+  }
+  document.getElementById('streak-text').textContent = S.streak+'-day streak 🔥';
+  document.getElementById('streak-sub').textContent = S.streak>0?'保持下去！':'今天還沒開始練習';
+}
+updateStreak();
+
+// ===========================
+// WAVEFORM GENERATOR
+// ===========================
+function makeWave(el, count, maxH, minH, cls){
+  el.innerHTML='';
+  for(let i=0;i<count;i++){
+    const b=document.createElement('div');
+    b.className=cls||'wb';
+    b.style.height=(Math.random()*(maxH-minH)+minH)+'px';
+    el.appendChild(b);
+  }
+}
+function makeMiniWave(el, count, cls){
+  el.innerHTML='';
+  for(let i=0;i<count;i++){
+    const b=document.createElement('div');
+    b.className=cls||'mw-b';
+    b.style.height=(Math.random()*14+4)+'px';
+    el.appendChild(b);
+  }
+}
+
+// ===========================
+// STEP 1A — FILE UPLOAD
+// ===========================
+document.getElementById('file-input').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  S.audioFile = file;
+  if(S.audioBlobUrl) URL.revokeObjectURL(S.audioBlobUrl);
+  S.audioBlobUrl = URL.createObjectURL(file);
+  document.getElementById('upload-zone').classList.add('active-file');
+  document.getElementById('uz-main').textContent = file.name;
+  document.getElementById('uz-sub').textContent = (file.size/1024/1024).toFixed(2)+' MB · '+file.type;
+  document.getElementById('uz-main').style.color='';
+  document.getElementById('btn-start-play').disabled=false;
+  document.getElementById('upload-hint').textContent='';
+});
+
+// ===========================
+// STEP 1B — PLAYBACK
+// ===========================
+function fmtTime(s){
+  const m=Math.floor(s/60), sec=Math.floor(s%60);
+  return m+':'+(sec<10?'0':'')+sec;
+}
+function startPlayback(){
+  const audio = document.getElementById('main-audio');
+  audio.src = S.audioBlobUrl;
+  makeWave(document.getElementById('s1b-wave'), 48, 26, 3);
+  document.getElementById('s1b-filename').textContent = S.audioFile.name;
+  audio.onloadedmetadata = ()=>{
+    S.duration = audio.duration;
+    document.getElementById('s1b-info').textContent = fmtTime(S.duration)+' · 分析中…';
+    document.getElementById('s1b-dur').textContent = fmtTime(S.duration);
+  };
+  audio.ontimeupdate = ()=>{
+    const pct = (audio.currentTime/audio.duration*100)||0;
+    document.getElementById('s1b-prog').style.width=pct+'%';
+    document.getElementById('s1b-cur').textContent=fmtTime(audio.currentTime);
+  };
+  audio.onended = ()=>{
+    analyzeAudio();
+  };
+  audio.play().catch(()=>showToast('播放失敗，請確認音檔格式'));
+}
+
+// Simple silence-based segmentation simulation
+// In real app this would use Web Audio API silence detection
+function analyzeAudio(){
+  document.getElementById('s1b-info').textContent = '分析完成 · 正在斷句…';
+  setTimeout(()=>{
+    const samples = [
+      "The key to effective communication is not just what you say, but how you say it.",
+      "Your tone of voice conveys more emotion than the words themselves.",
+      "Active listening is just as important as speaking clearly.",
+      "When presenting ideas, always start with the most important point first.",
+      "Clarity and brevity are the hallmarks of professional communication.",
+      "Nonverbal cues like eye contact and posture reinforce your message.",
+      "Asking questions shows engagement and helps build understanding."
+    ];
+    S.sentences = samples;
+    showToast('斷句完成，共 '+S.sentences.length+' 句');
+    setTimeout(()=>gotoStep1C(), 800);
+  }, 1200);
+}
+
+// ===========================
+// STEP 1C — SENTENCE SELECT
+// ===========================
+function initStep1C(){
+  S.currentSentIdx=0;
+  S.selectedSentences=[];
+  renderS1C();
+}
+function renderS1C(){
+  const n=S.sentences.length, i=S.currentSentIdx;
+  // segs
+  const wrap=document.getElementById('s1c-seg-wrap');
+  wrap.innerHTML='';
+  for(let j=0;j<n;j++){
+    const d=document.createElement('div');
+    d.className='sp-seg'+(j<i?' done':j===i?' cur':'');
+    wrap.appendChild(d);
+  }
+  document.getElementById('s1c-idx').textContent='Sentence '+(i+1)+' / '+n;
+  document.getElementById('s1c-selcount').textContent=S.selectedSentences.length+' 句已選';
+  document.getElementById('sent-idx-label').textContent='Sentence '+(i+1)+' / '+n;
+  document.getElementById('sent-text').textContent=S.sentences[i];
+  // selected state
+  const card=document.getElementById('sent-card');
+  const isSel=S.selectedSentences.includes(i);
+  card.classList.toggle('selected', isSel);
+  let badge=card.querySelector('.sent-badge');
+  if(isSel){if(!badge){badge=document.createElement('span');badge.className='sent-badge';badge.textContent='✓ 已選';card.appendChild(badge);}}
+  else{if(badge)badge.remove();}
+  // btn
+  const selBtn=document.getElementById('btn-toggle-sel');
+  if(isSel){selBtn.textContent='取消選擇';selBtn.className='btn btn-sm';selBtn.style.background='var(--c-surf2)';selBtn.style.color='var(--c-muted)';selBtn.style.border='1.5px solid var(--c-border)';}
+  else{selBtn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 選擇此句';selBtn.className='btn btn-success btn-sm';selBtn.style.background='';selBtn.style.color='';selBtn.style.border='';}
+  // arrows
+  document.getElementById('arr-prev').disabled=i===0;
+  document.getElementById('arr-next').disabled=i===n-1;
+  // confirm
+  document.getElementById('btn-confirm-sel').disabled=S.selectedSentences.length===0;
+  document.getElementById('sel-num-display').textContent=S.selectedSentences.length+' 句';
+}
+function sentNav(dir){
+  S.currentSentIdx=Math.max(0,Math.min(S.sentences.length-1,S.currentSentIdx+dir));
+  renderS1C();
+}
+function toggleSelect(){
+  const i=S.currentSentIdx;
+  const idx=S.selectedSentences.indexOf(i);
+  if(idx>=0) S.selectedSentences.splice(idx,1);
+  else S.selectedSentences.push(i);
+  S.selectedSentences.sort((a,b)=>a-b);
+  renderS1C();
+}
+function confirmSelection(){
+  if(S.selectedSentences.length===0){showToast('請至少選擇一個句子');return;}
+  S.s1Done=true;
+  updateStreak();
+  // unlock step2 card on home
+  const c2=document.getElementById('card-s2');
+  c2.style.opacity='';c2.style.pointerEvents='';
+  document.getElementById('s2-pill').textContent='Step 1 已完成，可開始';
+  document.getElementById('s2-pill').className='status-pill pill-active';
+  document.getElementById('s1-pill').textContent='已完成';
+  document.getElementById('s1-pill').className='status-pill pill-done';
+  showToast('選句完成！共 '+S.selectedSentences.length+' 句');
+  setTimeout(()=>{ showScreen('home'); }, 900);
+}
+
+// ===========================
+// STEP 2 — SHADOWING
+// ===========================
+function initStep2(){
+  S.s2SentIdx=0;
+  S.nativePlayed=false;
+  S.recordingBlob=null;
+  S.recordingBlobUrl=null;
+  renderS2();
+}
+
+function renderS2(){
+  const sel=S.selectedSentences;
+  const n=sel.length;
+  const i=S.s2SentIdx;
+  const sentIdx=sel[i];
+  // segs
+  const wrap=document.getElementById('s2-seg-wrap');
+  wrap.innerHTML='';
+  for(let j=0;j<n;j++){
+    const d=document.createElement('div');
+    d.className='sp-seg'+(j<i?' done':j===i?' cur':'');
+    wrap.appendChild(d);
+  }
+  document.getElementById('s2-idx').textContent='Selected '+(i+1)+' / '+n;
+  document.getElementById('s2-sent-label').textContent='Selected '+(i+1)+' / '+n;
+  document.getElementById('s2-sent-text').textContent=S.sentences[sentIdx]||'…';
+  document.getElementById('s2-arr-prev').disabled=i===0;
+  document.getElementById('s2-arr-next').disabled=i===n-1;
+  // reset state for this sentence
+  S.nativePlayed=false;
+  S.recordingBlob=null;
+  S.recordingBlobUrl=null;
+  S.isRecording=false;
+  // buttons
+  setS2State('pre');
+  // hide dual wave + download
+  document.getElementById('s2-dual-wave').style.display='none';
+  document.getElementById('btn-download').style.display='none';
+  document.getElementById('s2-rerow').style.display='none';
+  makeMiniWave(document.getElementById('dw-nat'),32,'mw-b');
+  makeMiniWave(document.getElementById('dw-me'),32,'mw-b');
+}
+
+function setS2State(state){
+  const btnPlay=document.getElementById('btn-play-native');
+  const btnPlayTxt=document.getElementById('btn-play-native-txt');
+  const btnRec=document.getElementById('btn-record');
+  const btnRecTxt=document.getElementById('btn-record-txt');
+  const btnListen=document.getElementById('btn-listen-back');
+  const btnListenTxt=document.getElementById('btn-listen-txt');
+  const seqBar=document.getElementById('s2-seq-bar');
+  const seqTxt=document.getElementById('s2-seq-txt');
+
+  // reset
+  btnPlay.disabled=false; btnRec.disabled=true; btnListen.disabled=true;
+  btnRec.classList.remove('recording');
+
+  if(state==='pre'){
+    seqBar.className='seq-bar seq-1';
+    seqBar.querySelector('.seq-num').textContent='①';
+    seqTxt.textContent='先播放原句，才能開始錄音';
+    btnPlayTxt.textContent='播放原句音檔';
+    btnRecTxt.textContent='開始錄音（播放後解鎖）';
+    btnListenTxt.textContent='聆聽我的錄音（錄音後解鎖）';
+  } else if(state==='ready-rec'){
+    seqBar.className='seq-bar seq-2';
+    seqBar.querySelector('.seq-num').textContent='②';
+    seqTxt.textContent='原句已播放，現在可以開始錄音';
+    btnPlayTxt.textContent='重新播放原句';
+    btnRec.disabled=false;
+    btnRecTxt.textContent='開始錄音跟讀';
+    btnListenTxt.textContent='聆聽我的錄音（錄音後解鎖）';
+  } else if(state==='recording'){
+    seqBar.className='seq-bar seq-2';
+    seqBar.querySelector('.seq-num').textContent='②';
+    seqTxt.textContent='錄音中 — 請跟讀句子';
+    btnPlay.disabled=true;
+    btnRec.disabled=false;
+    btnRec.classList.add('recording');
+    btnRecTxt.textContent='錄音中… 點此停止';
+    btnListenTxt.textContent='聆聽我的錄音（錄音後解鎖）';
+  } else if(state==='done-rec'){
+    seqBar.className='seq-bar seq-3';
+    seqBar.querySelector('.seq-num').textContent='③';
+    seqTxt.textContent='聆聽你的錄音，對比原聲';
+    btnPlayTxt.textContent='重新播放原句';
+    btnRec.disabled=false;
+    btnRecTxt.textContent='重新錄音';
+    btnListen.disabled=false;
+    btnListenTxt.textContent='聆聽我的錄音';
+    document.getElementById('s2-dual-wave').style.display='';
+    document.getElementById('btn-download').style.display='';
+    document.getElementById('s2-rerow').style.display='';
+    makeMiniWave(document.getElementById('dw-nat'),32,'mw-b');
+    makeMiniWave(document.getElementById('dw-me'),32,'mw-b');
+  }
+}
+
+// Extract slice of the original audio for the current sentence
+// (Real implementation: use Web Audio API to slice by detected timestamps)
+function getSegmentBlobUrl(){
+  // For PWA demo we use the full audio but in real app this would be a sliced blob
+  return S.audioBlobUrl;
+}
+
+function playNative(){
+  const url = getSegmentBlobUrl();
+  if(!url){showToast('音檔未載入');return;}
+  const a = document.getElementById('s2-playback');
+  a.src = url;
+  a.play().catch(()=>showToast('播放失敗'));
+  a.onended=()=>{
+    S.nativePlayed=true;
+    if(!S.isRecording) setS2State('ready-rec');
+  };
+  if(!S.nativePlayed) showToast('播放中…');
+}
+
+function toggleRecord(){
+  if(S.isRecording){ stopRecord(); }
+  else { startRecord(); }
+}
+function startRecord(){
+  if(!navigator.mediaDevices){showToast('此瀏覽器不支援麥克風錄音');return;}
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    S.recordingChunks=[];
+    S.mediaRecorder=new MediaRecorder(stream);
+    S.mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) S.recordingChunks.push(e.data); };
+    S.mediaRecorder.onstop=()=>{
+      S.recordingBlob=new Blob(S.recordingChunks,{type:'audio/webm'});
+      if(S.recordingBlobUrl) URL.revokeObjectURL(S.recordingBlobUrl);
+      S.recordingBlobUrl=URL.createObjectURL(S.recordingBlob);
+      stream.getTracks().forEach(t=>t.stop());
+      S.isRecording=false;
+      setS2State('done-rec');
+    };
+    S.mediaRecorder.start();
+    S.isRecording=true;
+    setS2State('recording');
+  }).catch(()=>showToast('無法存取麥克風，請允許麥克風權限'));
+}
+function stopRecord(){
+  if(S.mediaRecorder&&S.isRecording){ S.mediaRecorder.stop(); }
+}
+function listenBack(){
+  if(!S.recordingBlobUrl){showToast('尚無錄音');return;}
+  const a=document.getElementById('s2-recording-src');
+  a.src=S.recordingBlobUrl;
+  a.play().catch(()=>showToast('播放失敗'));
+}
+function downloadRecording(){
+  if(!S.recordingBlob){showToast('尚無錄音');return;}
+  const sel=S.selectedSentences;
+  const sentIdx=sel[S.s2SentIdx];
+  const fname='shadowspeak_s2_sent'+(sentIdx+1)+'_'+Date.now()+'.webm';
+  const a=document.createElement('a');
+  a.href=S.recordingBlobUrl;
+  a.download=fname;
+  a.click();
+  showToast('下載中：'+fname);
+}
+function reRecord(){ setS2State('ready-rec'); }
+function s2NextSent(){
+  const n=S.selectedSentences.length;
+  if(S.s2SentIdx<n-1){ S.s2SentIdx++; renderS2(); }
+  else{ showToast('所有句子已練習完成！');setTimeout(()=>goHome(),1000); }
+}
+function s2NavSent(dir){
+  const n=S.selectedSentences.length;
+  S.s2SentIdx=Math.max(0,Math.min(n-1,S.s2SentIdx+dir));
+  renderS2();
+}
+
+// ===========================
+// SERVICE WORKER REGISTRATION
+// ===========================
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
