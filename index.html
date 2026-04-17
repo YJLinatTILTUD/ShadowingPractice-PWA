@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#01696f">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ShadowSpeak">
 <title>ShadowSpeak</title>
@@ -623,6 +624,20 @@ audio{display:none;}
 
 <script>
 // ===========================
+// FORCE SW UPDATE
+// ===========================
+(async () => {
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) {
+      await reg.unregister();
+    }
+    // Re-register fresh
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+})();
+
+// ===========================
 // STATE
 // ===========================
 const S = {
@@ -884,17 +899,10 @@ async function analyzeAudio(){
 }
 
 function parseTxtSentences(txt){
-  // Split by sentence-ending punctuation: . ! ? … followed by space or newline
-  // Also split by newline if lines look like individual sentences
-  const lines = txt.split(/
-/).map(l=>l.trim()).filter(l=>l.length>0);
-  // If every line ends with punctuation or is short-ish, treat each line as a sentence
-  const allLinesAreSentences = lines.every(l => /[.!?…"'）)」』]$/.test(l) || l.length < 120);
-  if(allLinesAreSentences && lines.length > 1) return lines;
-  // Otherwise join and split by sentence punctuation
-  const joined = lines.join(' ');
-  const parts = joined.match(/[^.!?…]+[.!?…"'）)」』]*/g) || [];
-  return parts.map(s=>s.trim()).filter(s=>s.length>2);
+  const lines = txt.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+  if(lines.length > 1) return lines;
+  var parts = lines[0].match(/[^.!?]+[.!?]*/g) || [];
+  return parts.map(function(s){return s.trim();}).filter(function(s){return s.length>2;});
 }
 
 function detectSegments(audioBuf){
