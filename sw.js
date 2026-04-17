@@ -1,4 +1,4 @@
-const CACHE = 'shadowspeak-v4';
+const CACHE = 'shadowspeak-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',

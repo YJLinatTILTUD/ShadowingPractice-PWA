@@ -81,7 +81,8 @@ audio{display:none;}
   background:var(--c-surf);border:1px solid var(--c-border);border-radius:var(--r-xl);
   padding:16px;display:flex;align-items:center;gap:14px;
   box-shadow:var(--shadow);transition:box-shadow var(--tr),border-color var(--tr);
-  cursor:pointer;
+  cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0.05);
+  -webkit-user-select:none;user-select:none;
 }
 .step-card:hover{box-shadow:var(--shadow-lg);border-color:var(--c-pri);}
 .step-card.disabled{opacity:.45;pointer-events:none;}
@@ -322,7 +323,7 @@ audio{display:none;}
         <p>上傳音檔，選出練習句子</p>
         <span class="status-pill pill-active" id="s1-pill">待開始</span>
       </div>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5" style="pointer-events:none"><path d="M9 18l6-6-6-6"/></svg>
     </div>
 
     <div class="step-card" id="card-s2" onclick="gotoStep2()" style="opacity:.5;pointer-events:none">
@@ -334,7 +335,7 @@ audio{display:none;}
         <p>跟讀、錄音、對比原聲</p>
         <span class="status-pill pill-locked" id="s2-pill">完成 Step 1 後解鎖</span>
       </div>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5" style="pointer-events:none"><path d="M9 18l6-6-6-6"/></svg>
     </div>
 
     <div class="step-card disabled" onclick="gotoStep3()">
