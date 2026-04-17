@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ShadowSpeak">
 <title>ShadowSpeak</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="./manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -410,6 +410,10 @@ audio{display:none;}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       請聽完整音檔才可進行選句
     </div>
+    <div class="notice info" id="s1b-asr-notice">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      <span id="s1b-asr-status">語音辨識準備中（需網路）…</span>
+    </div>
 
     <button class="btn btn-record recording" id="btn-playing" disabled>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
@@ -628,6 +632,11 @@ const S = {
   currentSentIdx: 0,
   streak: parseInt(localStorage.getItem('ss_streak')||'0'),
   lastDate: localStorage.getItem('ss_lastdate')||'',
+  segments: [],
+  audioBuffer: null,
+  transcriptChunks: [],
+  recognition: null,
+  recognitionActive: false,
   s1Done: false,
   // step2
   s2SentIdx: 0,
@@ -772,29 +781,271 @@ function startPlayback(){
     document.getElementById('s1b-cur').textContent=fmtTime(audio.currentTime);
   };
   audio.onended = ()=>{
+    stopSpeechRecognition();
     analyzeAudio();
   };
   audio.play().catch(()=>showToast('播放失敗，請確認音檔格式'));
+  startSpeechRecognition();
+}
+
+// ===========================
+// WEB SPEECH API — TRANSCRIPT
+// ===========================
+// Runs during Step 1B playback; results are stored with timestamps
+// and later matched to detected segments in analyzeAudio().
+
+function startSpeechRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    document.getElementById('s1b-asr-status').textContent = '（此瀏覽器不支援語音辨識）';
+    return;
+  }
+  S.recognition = new SR();
+  S.recognition.lang = 'en-US';
+  S.recognition.continuous = true;
+  S.recognition.interimResults = false;
+  S.recognition.maxAlternatives = 1;
+  S.transcriptChunks = []; // [{time, text}]
+
+  const audio = document.getElementById('main-audio');
+  S.recognition.onresult = (e) => {
+    for(let i = e.resultIndex; i < e.results.length; i++){
+      if(e.results[i].isFinal){
+        const text = e.results[i][0].transcript.trim();
+        const t = audio.currentTime;
+        if(text) S.transcriptChunks.push({ time: t, text });
+      }
+    }
+  };
+  S.recognition.onerror = (e) => {
+    if(e.error !== 'no-speech' && e.error !== 'aborted'){
+      document.getElementById('s1b-asr-status').textContent = '辨識中斷 (' + e.error + ')';
+    }
+  };
+  S.recognition.onstart = () => {
+    document.getElementById('s1b-asr-status').textContent = '🎙 語音辨識進行中…';
+  };
+  S.recognition.onend = () => {
+    // Auto-restart while audio is still playing
+    const audio = document.getElementById('main-audio');
+    if(!audio.paused && !audio.ended && S.recognitionActive){
+      try { S.recognition.start(); } catch(e){}
+    }
+  };
+  S.recognitionActive = true;
+  try { S.recognition.start(); } catch(e){}
+}
+
+function stopSpeechRecognition(){
+  S.recognitionActive = false;
+  if(S.recognition){ try{ S.recognition.stop(); }catch(e){} }
+  document.getElementById('s1b-asr-status').textContent = '辨識完成';
+}
+
+function assignTranscriptsToSegments(){
+  // Match transcript chunks to segments by timestamp proximity
+  if(!S.transcriptChunks || !S.segments) return;
+  S.segments.forEach((seg, i) => {
+    const mid = (seg.start + seg.end) / 2;
+    // Collect all chunks whose timestamp falls within [start, end]
+    const hits = S.transcriptChunks.filter(c => c.time >= seg.start && c.time <= seg.end);
+    if(hits.length > 0){
+      seg.transcript = hits.map(h => h.text).join(' ');
+    } else {
+      // Nearest chunk fallback
+      const nearest = S.transcriptChunks.reduce((best, c) => {
+        return Math.abs(c.time - mid) < Math.abs(best.time - mid) ? c : best;
+      }, S.transcriptChunks[0]);
+      if(nearest && Math.abs(nearest.time - mid) < 8){
+        seg.transcript = nearest.text;
+      }
+    }
+  });
+  // Update S.sentences with transcript text
+  S.sentences = S.segments.map((seg, i) => {
+    const ts = '[' + fmtTime(seg.start) + '–' + fmtTime(seg.end) + ']';
+    return seg.transcript ? seg.transcript + '  ' + ts : 'Segment ' + (i+1) + '  ' + ts;
+  });
 }
 
 // Simple silence-based segmentation simulation
 // In real app this would use Web Audio API silence detection
-function analyzeAudio(){
-  document.getElementById('s1b-info').textContent = '分析完成 · 正在斷句…';
-  setTimeout(()=>{
-    const samples = [
-      "The key to effective communication is not just what you say, but how you say it.",
-      "Your tone of voice conveys more emotion than the words themselves.",
-      "Active listening is just as important as speaking clearly.",
-      "When presenting ideas, always start with the most important point first.",
-      "Clarity and brevity are the hallmarks of professional communication.",
-      "Nonverbal cues like eye contact and posture reinforce your message.",
-      "Asking questions shows engagement and helps build understanding."
-    ];
-    S.sentences = samples;
-    showToast('斷句完成，共 '+S.sentences.length+' 句');
+// ===========================
+// AUDIO SEGMENTATION (Web Audio API)
+// ===========================
+// S.segments = [{start, end, blobUrl}, ...]
+// S.audioBuffer = decoded AudioBuffer
+
+async function analyzeAudio(){
+  document.getElementById('s1b-info').textContent = '音訊解碼中…';
+  try {
+    const arrayBuf = await S.audioFile.arrayBuffer();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuf = await ctx.decodeAudioData(arrayBuf);
+    S.audioBuffer = audioBuf;
+    ctx.close();
+
+    const segments = detectSegments(audioBuf);
+    if(segments.length === 0){
+      showToast('找不到可辨識的段落，請嘗試其他音檔');
+      return;
+    }
+
+    document.getElementById('s1b-info').textContent = '斷句完成，共 '+segments.length+' 句';
+
+    // Build segment blob URLs for Step 2 playback
+    S.segments = [];
+    for(const seg of segments){
+      const blob = sliceAudioBuffer(S.audioBuffer, seg.start, seg.end);
+      const url = URL.createObjectURL(blob);
+      S.segments.push({ start: seg.start, end: seg.end, blobUrl: url });
+    }
+    // Assign transcript chunks to segments (if Web Speech API ran)
+    assignTranscriptsToSegments();
+
+    showToast('斷句完成，共 ' + S.sentences.length + ' 句');
     setTimeout(()=>gotoStep1C(), 800);
-  }, 1200);
+  } catch(err) {
+    console.error(err);
+    showToast('音訊解析失敗，請確認音檔格式');
+    document.getElementById('s1b-info').textContent = '解析失敗';
+  }
+}
+
+function detectSegments(audioBuf){
+  const sr = audioBuf.sampleRate;
+  const ch = audioBuf.getChannelData(0);
+  const hop = Math.floor(sr * 0.02);       // 20ms frame hop
+  const silenceRMS = 0.012;                // silence threshold
+  const minSilenceFrames = 15;             // 0.3s silence = boundary
+  const minSegSec = 1.0;                   // ignore segments < 1s
+  const maxSegSec = 30.0;                  // force-split if > 30s
+  const paddingSec = 0.05;                 // 50ms padding each side
+
+  const totalFrames = Math.floor(ch.length / hop);
+  const isSilent = new Uint8Array(totalFrames);
+
+  for(let f = 0; f < totalFrames; f++){
+    const start = f * hop;
+    const end = Math.min(start + hop, ch.length);
+    let sum = 0;
+    for(let s = start; s < end; s++) sum += ch[s] * ch[s];
+    isSilent[f] = Math.sqrt(sum / (end - start)) < silenceRMS ? 1 : 0;
+  }
+
+  // Find speech runs separated by silence gaps
+  const segments = [];
+  let inSpeech = false;
+  let segStart = 0;
+  let silCount = 0;
+
+  for(let f = 0; f < totalFrames; f++){
+    if(!inSpeech){
+      if(!isSilent[f]){ inSpeech = true; segStart = f; silCount = 0; }
+    } else {
+      if(isSilent[f]){
+        silCount++;
+        if(silCount >= minSilenceFrames){
+          const segEnd = (f - silCount + 1) * hop / sr;
+          const segStartSec = segStart * hop / sr;
+          const dur = segEnd - segStartSec;
+          if(dur >= minSegSec){
+            // force-split long segments
+            if(dur > maxSegSec){
+              const parts = Math.ceil(dur / maxSegSec);
+              for(let p = 0; p < parts; p++){
+                const ps = segStartSec + p * maxSegSec;
+                const pe = Math.min(segStartSec + (p+1) * maxSegSec, segEnd);
+                segments.push({
+                  start: Math.max(0, ps - paddingSec),
+                  end: Math.min(audioBuf.duration, pe + paddingSec)
+                });
+              }
+            } else {
+              segments.push({
+                start: Math.max(0, segStartSec - paddingSec),
+                end: Math.min(audioBuf.duration, segEnd + paddingSec)
+              });
+            }
+          }
+          inSpeech = false; silCount = 0;
+        }
+      } else {
+        silCount = 0;
+      }
+    }
+  }
+  // Flush last segment
+  if(inSpeech){
+    const segStartSec = segStart * hop / sr;
+    const segEnd = audioBuf.duration;
+    const dur = segEnd - segStartSec;
+    if(dur >= minSegSec){
+      segments.push({
+        start: Math.max(0, segStartSec - paddingSec),
+        end: segEnd
+      });
+    }
+  }
+  return segments;
+}
+
+function sliceAudioBuffer(audioBuf, startSec, endSec){
+  const sr = audioBuf.sampleRate;
+  const startSample = Math.floor(startSec * sr);
+  const endSample = Math.min(Math.ceil(endSec * sr), audioBuf.length);
+  const len = endSample - startSample;
+  const numCh = audioBuf.numberOfChannels;
+
+  const offCtx = new OfflineAudioContext(numCh, len, sr);
+  const sliced = offCtx.createBuffer(numCh, len, sr);
+  for(let c = 0; c < numCh; c++){
+    const src = audioBuf.getChannelData(c);
+    const dst = sliced.getChannelData(c);
+    for(let i = 0; i < len; i++) dst[i] = src[startSample + i];
+  }
+
+  // Encode to WAV blob
+  const wavData = encodeWAV(sliced);
+  return new Blob([wavData], {type:'audio/wav'});
+}
+
+function encodeWAV(audioBuf){
+  const numCh = audioBuf.numberOfChannels;
+  const sr = audioBuf.sampleRate;
+  const numSamples = audioBuf.length;
+  const bitsPerSample = 16;
+  const blockAlign = numCh * (bitsPerSample / 8);
+  const byteRate = sr * blockAlign;
+  const dataSize = numSamples * blockAlign;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  function writeStr(off, str){ for(let i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i)); }
+  writeStr(0,'RIFF');
+  view.setUint32(4, 36+dataSize, true);
+  writeStr(8,'WAVE');
+  writeStr(12,'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);       // PCM
+  view.setUint16(22, numCh, true);
+  view.setUint32(24, sr, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+  writeStr(36,'data');
+  view.setUint32(40, dataSize, true);
+
+  let offset = 44;
+  // Interleave channels
+  for(let i = 0; i < numSamples; i++){
+    for(let c = 0; c < numCh; c++){
+      const sample = Math.max(-1, Math.min(1, audioBuf.getChannelData(c)[i]));
+      view.setInt16(offset, sample < 0 ? sample*0x8000 : sample*0x7FFF, true);
+      offset += 2;
+    }
+  }
+  return buffer;
 }
 
 // ===========================
@@ -966,8 +1217,11 @@ function setS2State(state){
 // Extract slice of the original audio for the current sentence
 // (Real implementation: use Web Audio API to slice by detected timestamps)
 function getSegmentBlobUrl(){
-  // For PWA demo we use the full audio but in real app this would be a sliced blob
-  return S.audioBlobUrl;
+  // Return pre-sliced WAV blob URL for the current Step 2 sentence
+  const sel = S.selectedSentences;
+  const sentIdx = sel[S.s2SentIdx];
+  if(S.segments && S.segments[sentIdx]) return S.segments[sentIdx].blobUrl;
+  return S.audioBlobUrl; // fallback
 }
 
 function playNative(){
@@ -1043,7 +1297,7 @@ function s2NavSent(dir){
 // ===========================
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
   });
 }
 </script>
