@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#01696f">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ShadowSpeak">
 <title>ShadowSpeak</title>
@@ -82,8 +81,7 @@ audio{display:none;}
   background:var(--c-surf);border:1px solid var(--c-border);border-radius:var(--r-xl);
   padding:16px;display:flex;align-items:center;gap:14px;
   box-shadow:var(--shadow);transition:box-shadow var(--tr),border-color var(--tr);
-  cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0.05);
-  -webkit-user-select:none;user-select:none;
+  cursor:pointer;
 }
 .step-card:hover{box-shadow:var(--shadow-lg);border-color:var(--c-pri);}
 .step-card.disabled{opacity:.45;pointer-events:none;}
@@ -324,7 +322,7 @@ audio{display:none;}
         <p>上傳音檔，選出練習句子</p>
         <span class="status-pill pill-active" id="s1-pill">待開始</span>
       </div>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5" style="pointer-events:none"><path d="M9 18l6-6-6-6"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
     </div>
 
     <div class="step-card" id="card-s2" onclick="gotoStep2()" style="opacity:.5;pointer-events:none">
@@ -336,7 +334,7 @@ audio{display:none;}
         <p>跟讀、錄音、對比原聲</p>
         <span class="status-pill pill-locked" id="s2-pill">完成 Step 1 後解鎖</span>
       </div>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5" style="pointer-events:none"><path d="M9 18l6-6-6-6"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-faint)" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
     </div>
 
     <div class="step-card disabled" onclick="gotoStep3()">
@@ -375,11 +373,13 @@ audio{display:none;}
     <input type="file" id="file-input" accept="audio/*,video/mp4">
     <p style="font-size:.75rem;color:var(--c-faint);text-align:center">— 或從其他 App 分享至此 —</p>
 
+
     <button class="btn btn-primary" id="btn-start-play" disabled onclick="gotoStep1B()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       開始播放
     </button>
     <p style="font-size:.72rem;color:var(--c-faint);text-align:center" id="upload-hint">上傳音檔後解鎖</p>
+    <p style="font-size:.75rem;text-align:center;min-height:1.2em" id="txt-fetch-status"></p>
   </div>
 
   <!-- ===================== STEP 1B — LISTEN ===================== -->
@@ -412,9 +412,9 @@ audio{display:none;}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       請聽完整音檔才可進行選句
     </div>
-    <div class="notice info" id="s1b-asr-notice">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-      <span id="s1b-asr-status">語音辨識準備中（需網路）…</span>
+    <div class="notice info" id="s1b-txt-notice">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      <span id="s1b-txt-status">讀取文字檔中…</span>
     </div>
 
     <button class="btn btn-record recording" id="btn-playing" disabled>
@@ -622,20 +622,6 @@ audio{display:none;}
 
 <script>
 // ===========================
-// FORCE SW UPDATE
-// ===========================
-(async () => {
-  if ('serviceWorker' in navigator) {
-    const regs = await navigator.serviceWorker.getRegistrations();
-    for (const reg of regs) {
-      await reg.unregister();
-    }
-    // Re-register fresh
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  }
-})();
-
-// ===========================
 // STATE
 // ===========================
 const S = {
@@ -650,9 +636,8 @@ const S = {
   lastDate: localStorage.getItem('ss_lastdate')||'',
   segments: [],
   audioBuffer: null,
-  transcriptChunks: [],
-  recognition: null,
-  recognitionActive: false,
+  txtContent: null,
+  expectedTxtName: '',
   s1Done: false,
   // step2
   s2SentIdx: 0,
@@ -769,10 +754,35 @@ document.getElementById('file-input').addEventListener('change', function(e){
   document.getElementById('upload-zone').classList.add('active-file');
   document.getElementById('uz-main').textContent = file.name;
   document.getElementById('uz-sub').textContent = (file.size/1024/1024).toFixed(2)+' MB · '+file.type;
-  document.getElementById('uz-main').style.color='';
-  document.getElementById('btn-start-play').disabled=false;
-  document.getElementById('upload-hint').textContent='';
+  document.getElementById('btn-start-play').disabled = false;
+  document.getElementById('upload-hint').textContent = '';
+  // Auto-fetch matching txt from transcripts/
+  document.getElementById('txt-fetch-status').textContent = '尋找 ' + file.name.replace(/\.[^.]+$/, '') + '.txt…';
+  document.getElementById('txt-fetch-status').style.color = 'var(--c-muted)';
+  fetchTxtForAudio(file.name);
 });
+
+async function fetchTxtForAudio(audioFilename){
+  const baseName = audioFilename.replace(/\.[^.]+$/, '');
+  const url = 'transcripts/' + baseName + '.txt';
+  try {
+    const resp = await fetch(url);
+    if(resp.ok){
+      S.txtContent = await resp.text();
+      document.getElementById('txt-fetch-status').textContent = baseName+'.txt 載入成功 ✓';
+      document.getElementById('txt-fetch-status').style.color = 'var(--c-green)';
+      showToast('文字檔載入完成');
+    } else {
+      S.txtContent = null;
+      document.getElementById('txt-fetch-status').textContent = baseName+'.txt 找不到，將以時間戳記顯示';
+      document.getElementById('txt-fetch-status').style.color = 'var(--c-warn)';
+    }
+  } catch(e){
+    S.txtContent = null;
+    document.getElementById('txt-fetch-status').textContent = '無法抓取文字檔（離線？）';
+    document.getElementById('txt-fetch-status').style.color = 'var(--c-warn)';
+  }
+}
 
 // ===========================
 // STEP 1B — PLAYBACK
@@ -786,9 +796,18 @@ function startPlayback(){
   audio.src = S.audioBlobUrl;
   makeWave(document.getElementById('s1b-wave'), 48, 26, 3);
   document.getElementById('s1b-filename').textContent = S.audioFile.name;
+  // Show txt status in 1B
+  if(S.txtContent){
+    document.getElementById('s1b-txt-status').textContent = '文字檔已載入 ✓';
+    document.getElementById('s1b-txt-notice').style.background = 'var(--c-green-bg)';
+    document.getElementById('s1b-txt-notice').style.color = 'var(--c-green)';
+    document.getElementById('s1b-txt-notice').style.borderColor = 'var(--c-green)';
+  } else {
+    document.getElementById('s1b-txt-status').textContent = '未載入文字檔，將以時間戳記顯示';
+  }
   audio.onloadedmetadata = ()=>{
     S.duration = audio.duration;
-    document.getElementById('s1b-info').textContent = fmtTime(S.duration)+' · 分析中…';
+    document.getElementById('s1b-info').textContent = fmtTime(S.duration);
     document.getElementById('s1b-dur').textContent = fmtTime(S.duration);
   };
   audio.ontimeupdate = ()=>{
@@ -796,104 +815,21 @@ function startPlayback(){
     document.getElementById('s1b-prog').style.width=pct+'%';
     document.getElementById('s1b-cur').textContent=fmtTime(audio.currentTime);
   };
-  audio.onended = ()=>{
-    stopSpeechRecognition();
-    analyzeAudio();
-  };
+  audio.onended = ()=>{ analyzeAudio(); };
   audio.play().catch(()=>showToast('播放失敗，請確認音檔格式'));
-  startSpeechRecognition();
 }
 
-// ===========================
-// WEB SPEECH API — TRANSCRIPT
-// ===========================
-// Runs during Step 1B playback; results are stored with timestamps
-// and later matched to detected segments in analyzeAudio().
-
-function startSpeechRecognition(){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){
-    document.getElementById('s1b-asr-status').textContent = '（此瀏覽器不支援語音辨識）';
-    return;
-  }
-  S.recognition = new SR();
-  S.recognition.lang = 'en-US';
-  S.recognition.continuous = true;
-  S.recognition.interimResults = false;
-  S.recognition.maxAlternatives = 1;
-  S.transcriptChunks = []; // [{time, text}]
-
-  const audio = document.getElementById('main-audio');
-  S.recognition.onresult = (e) => {
-    for(let i = e.resultIndex; i < e.results.length; i++){
-      if(e.results[i].isFinal){
-        const text = e.results[i][0].transcript.trim();
-        const t = audio.currentTime;
-        if(text) S.transcriptChunks.push({ time: t, text });
-      }
-    }
-  };
-  S.recognition.onerror = (e) => {
-    if(e.error !== 'no-speech' && e.error !== 'aborted'){
-      document.getElementById('s1b-asr-status').textContent = '辨識中斷 (' + e.error + ')';
-    }
-  };
-  S.recognition.onstart = () => {
-    document.getElementById('s1b-asr-status').textContent = '🎙 語音辨識進行中…';
-  };
-  S.recognition.onend = () => {
-    // Auto-restart while audio is still playing
-    const audio = document.getElementById('main-audio');
-    if(!audio.paused && !audio.ended && S.recognitionActive){
-      try { S.recognition.start(); } catch(e){}
-    }
-  };
-  S.recognitionActive = true;
-  try { S.recognition.start(); } catch(e){}
-}
-
-function stopSpeechRecognition(){
-  S.recognitionActive = false;
-  if(S.recognition){ try{ S.recognition.stop(); }catch(e){} }
-  document.getElementById('s1b-asr-status').textContent = '辨識完成';
-}
-
-function assignTranscriptsToSegments(){
-  // Match transcript chunks to segments by timestamp proximity
-  if(!S.transcriptChunks || !S.segments) return;
-  S.segments.forEach((seg, i) => {
-    const mid = (seg.start + seg.end) / 2;
-    // Collect all chunks whose timestamp falls within [start, end]
-    const hits = S.transcriptChunks.filter(c => c.time >= seg.start && c.time <= seg.end);
-    if(hits.length > 0){
-      seg.transcript = hits.map(h => h.text).join(' ');
-    } else {
-      // Nearest chunk fallback
-      const nearest = S.transcriptChunks.reduce((best, c) => {
-        return Math.abs(c.time - mid) < Math.abs(best.time - mid) ? c : best;
-      }, S.transcriptChunks[0]);
-      if(nearest && Math.abs(nearest.time - mid) < 8){
-        seg.transcript = nearest.text;
-      }
-    }
-  });
-  // Update S.sentences with transcript text
-  S.sentences = S.segments.map((seg, i) => {
-    const ts = '[' + fmtTime(seg.start) + '–' + fmtTime(seg.end) + ']';
-    return seg.transcript ? seg.transcript + '  ' + ts : 'Segment ' + (i+1) + '  ' + ts;
-  });
-}
 
 // Simple silence-based segmentation simulation
 // In real app this would use Web Audio API silence detection
 // ===========================
-// AUDIO SEGMENTATION (Web Audio API)
+// SEGMENTATION — TXT + AUDIO
 // ===========================
-// S.segments = [{start, end, blobUrl}, ...]
-// S.audioBuffer = decoded AudioBuffer
+// If txt loaded: parse sentences by punctuation, pair with audio segments by ratio
+// If no txt: timestamp-only labels from silence detection
 
 async function analyzeAudio(){
-  document.getElementById('s1b-info').textContent = '音訊解碼中…';
+  document.getElementById('s1b-info').textContent = '分析中…';
   try {
     const arrayBuf = await S.audioFile.arrayBuffer();
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -901,43 +837,65 @@ async function analyzeAudio(){
     S.audioBuffer = audioBuf;
     ctx.close();
 
-    const segments = detectSegments(audioBuf);
-    if(segments.length === 0){
-      showToast('找不到可辨識的段落，請嘗試其他音檔');
-      return;
-    }
+    const rawSegs = detectSegments(audioBuf);
 
-    document.getElementById('s1b-info').textContent = '斷句完成，共 '+segments.length+' 句';
-
-    // Build segment blob URLs for Step 2 playback
     S.segments = [];
-    for(const seg of segments){
+    for(const seg of rawSegs){
       const blob = sliceAudioBuffer(S.audioBuffer, seg.start, seg.end);
       const url = URL.createObjectURL(blob);
-      S.segments.push({ start: seg.start, end: seg.end, blobUrl: url });
+      S.segments.push({ start: seg.start, end: seg.end, blobUrl: url, transcript: null });
     }
-    // Assign transcript chunks to segments (if Web Speech API ran)
-    assignTranscriptsToSegments();
 
-    showToast('斷句完成，共 ' + S.sentences.length + ' 句');
-    setTimeout(()=>gotoStep1C(), 800);
-  } catch(err) {
+    // Build sentence labels
+    if(S.txtContent && S.txtContent.trim().length > 0){
+      const txtSentences = parseTxtSentences(S.txtContent);
+      // Map txt sentences to audio segments (by count ratio)
+      S.sentences = [];
+      const n = Math.max(S.segments.length, txtSentences.length);
+      for(let i = 0; i < n; i++){
+        const txt = txtSentences[i] || null;
+        const seg = S.segments[i] || null;
+        const ts = seg ? ' ['+fmtTime(seg.start)+'–'+fmtTime(seg.end)+']' : '';
+        if(txt){
+          S.sentences.push(txt + ts);
+          if(seg) seg.transcript = txt;
+        } else if(seg){
+          S.sentences.push('Segment '+(i+1)+ts);
+        }
+        // If txt has more sentences than audio segments, add extra entries without audio
+        if(!seg && txt){
+          S.segments.push({ start: 0, end: 0, blobUrl: null, transcript: txt });
+        }
+      }
+    } else {
+      // No txt — timestamp fallback
+      S.sentences = S.segments.map((seg, i) =>
+        'Segment '+(i+1)+'  ['+fmtTime(seg.start)+'–'+fmtTime(seg.end)+']'
+      );
+    }
+
+    showToast('完成，共 '+S.sentences.length+' 句');
+    setTimeout(()=>gotoStep1C(), 600);
+  } catch(err){
     console.error(err);
-    showToast('音訊解析失敗，請確認音檔格式');
-    document.getElementById('s1b-info').textContent = '解析失敗';
+    showToast('音訊解析失敗');
   }
 }
 
-<<<<<<< HEAD
 function parseTxtSentences(txt){
-  const lines = txt.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
-  if(lines.length > 1) return lines;
-  var parts = lines[0].match(/[^.!?]+[.!?]*/g) || [];
-  return parts.map(function(s){return s.trim();}).filter(function(s){return s.length>2;});
+  // Split by sentence-ending punctuation: . ! ? … followed by space or newline
+  // Also split by newline if lines look like individual sentences
+  const lines = txt.split(/
+/).map(l=>l.trim()).filter(l=>l.length>0);
+  // If every line ends with punctuation or is short-ish, treat each line as a sentence
+  const allLinesAreSentences = lines.every(l => /[.!?…"'）)」』]$/.test(l) || l.length < 120);
+  if(allLinesAreSentences && lines.length > 1) return lines;
+  // Otherwise join and split by sentence punctuation
+  const joined = lines.join(' ');
+  const parts = joined.match(/[^.!?…]+[.!?…"'）)」』]*/g) || [];
+  return parts.map(s=>s.trim()).filter(s=>s.length>2);
 }
 
-=======
->>>>>>> parent of 0aa770b (v3)
 function detectSegments(audioBuf){
   const sr = audioBuf.sampleRate;
   const ch = audioBuf.getChannelData(0);
